@@ -1,5 +1,7 @@
-# instagram-username-checker
-An automated Tampermonkey userscript to check, generate, and hunt available Instagram usernames. Features Telegram bot integration.
+[🇻🇳 Đọc bằng Tiếng Việt](./README-vi.md) | [🇺🇸 Read in English](./README.md)
+
+# 🚀 Instagram Auto Username Checker
+... (giữ nguyên phần tiếng Anh ở dưới)
 # 🚀 Instagram Auto Username Checker
 
 An automated Tampermonkey userscript to check and generate available Instagram usernames. 
