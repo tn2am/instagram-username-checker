@@ -1,8 +1,6 @@
 [🇻🇳 Đọc bằng Tiếng Việt](./README-vi.md) | [🇺🇸 Read in English](./README.md)
 
 # 🚀 Instagram Auto Username Checker
-... (giữ nguyên phần tiếng Anh ở dưới)
-# 🚀 Instagram Auto Username Checker
 
 An automated Tampermonkey userscript to check and generate available Instagram usernames. 
 
