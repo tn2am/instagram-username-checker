@@ -10,7 +10,7 @@ Một công cụ (Userscript) chạy qua Tampermonkey giúp tự động kiểm 
 
 **Bước 2:** Bấm vào nút màu xanh bên dưới để tự động cài đặt mã script:
 
-[![Cài đặt Script](https://img.shields.io/badge/Cài_đặt_Userscript-2ecc71?style=for-the-badge&logo=tampermonkey)](DÁN_LINK_RAW_CỦA_BẠN_VÀO_ĐÂY)
+[![Cài đặt Script](https://img.shields.io/badge/Cài_đặt_Userscript-2ecc71?style=for-the-badge&logo=tampermonkey)](https://www.tampermonkey.net/script_installation.php#url=https://github.com/tn2am/instagram-username-checker/raw/refs/heads/main/AutoCheckUsernameInstagram.user.js)
 
 ---
 
