@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Auto Check Username Instagram (Bypass CSP)
+// @name         Auto Check Username Instagram (Bypass CSP) - Pro UI
 // @namespace    http://tampermonkey.net/
-// @version      5.1
-// @description  Auto Check Username với tính năng Random hoặc qua văn bản cần kiểm tra, Bypass CSP gọi Telegram API
+// @version      5.2
+// @description  Auto Check Username với tính năng Random hoặc qua văn bản cần kiểm tra, Bypass CSP gọi Telegram API. Giao diện mượt mà, hỗ trợ bật/tắt lưu file.
 // @author       tn2am x Gemini
 // @match        https://accountscenter.instagram.com/profiles/*
 // @grant        GM_xmlhttpRequest
@@ -11,81 +11,148 @@
 (function () {
     'use strict';
 
-    // 1. DỌN DẸP BẢNG CŨ
+    // 1. DỌN DẸP BẢNG CŨ VÀ CSS CŨ
     const existingUI = document.getElementById('nam-checker-ui');
     if (existingUI) existingUI.remove();
+    const existingStyle = document.getElementById('nam-checker-style');
+    if (existingStyle) existingStyle.remove();
 
-    // 2. TẠO GIAO DIỆN (UI)
+    // 2. THÊM CSS ĐỂ GIAO DIỆN CHUYÊN NGHIỆP, CÔNG NGHỆ HƠN
+    const style = document.createElement('style');
+    style.id = 'nam-checker-style';
+    style.innerHTML = `
+        #nam-checker-ui {
+            position: fixed; bottom: 20px; right: 20px; width: 360px;
+            background: rgba(20, 24, 36, 0.95); backdrop-filter: blur(12px);
+            color: #e2e8f0; z-index: 999999; padding: 20px;
+            border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 13px; border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        #nam-checker-ui h3 {
+            margin: 0 0 15px 0; color: #00d2ff; text-align: center;
+            font-size: 16px; font-weight: 600; letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        #nam-checker-ui label {
+            display: block; margin-bottom: 5px; color: #94a3b8; font-weight: 500; font-size: 12px;
+        }
+        #nam-checker-ui input[type="text"], #nam-checker-ui input[type="number"], 
+        #nam-checker-ui select, #nam-checker-ui textarea, #nam-checker-ui input[type="file"] {
+            width: 100%; background: rgba(255, 255, 255, 0.05); color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15); padding: 8px 10px;
+            margin-bottom: 12px; border-radius: 8px; outline: none;
+            box-sizing: border-box; transition: border 0.2s;
+        }
+        #nam-checker-ui input:focus, #nam-checker-ui select:focus, #nam-checker-ui textarea:focus {
+            border-color: #00d2ff; background: rgba(255, 255, 255, 0.08);
+        }
+        #nam-checker-ui textarea { resize: vertical; min-height: 60px; }
+        
+        /* Checkbox styling */
+        .cyber-checkbox-wrapper {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+        }
+        .cyber-checkbox-wrapper input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: #00d2ff; cursor: pointer; margin: 0;
+        }
+        .cyber-checkbox-wrapper label { margin-bottom: 0; cursor: pointer; color: #cbd5e1; }
+
+        /* Button styling */
+        .cyber-btn {
+            flex: 1; border: none; color: white; padding: 10px; border-radius: 8px;
+            cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px;
+            transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; gap: 5px;
+        }
+        #ui-btn-start { background: linear-gradient(135deg, #00c6ff, #0072ff); box-shadow: 0 4px 15px rgba(0, 114, 255, 0.3); }
+        #ui-btn-start:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 114, 255, 0.5); }
+        
+        #ui-btn-stop { background: linear-gradient(135deg, #f85032, #e73827); box-shadow: 0 4px 15px rgba(231, 56, 39, 0.3); }
+        #ui-btn-stop:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(231, 56, 39, 0.5); }
+        
+        .cyber-btn:disabled { background: #334155 !important; color: #94a3b8 !important; cursor: not-allowed; box-shadow: none !important; transform: none !important; }
+
+        #ui-status {
+            background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 8px;
+            color: #fbbf24; text-align: center; font-weight: bold; border: 1px dashed rgba(255,255,255,0.2);
+            margin-top: 5px; word-break: break-all;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // 3. TẠO GIAO DIỆN (UI)
     const ui = document.createElement('div');
     ui.id = 'nam-checker-ui';
-    ui.style.cssText = `
-        position: fixed; bottom: 20px; right: 20px; width: 340px;
-        background: #1e1e1e; color: #ecf0f1; z-index: 999999; padding: 15px;
-        border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        font-family: Arial, sans-serif; font-size: 13px; border: 1px solid #333;
-    `;
 
     ui.innerHTML = `
-        <h3 style="margin: 0 0 10px 0; color: #3498db; text-align: center;">🚀 Auto Check Username Instagram</h3>
+        <h3>⚡ Auto Check Username</h3>
 
-        <label>Chế độ:</label>
-        <select id="ui-mode" style="width:100%; background: #2c3e50; color:white; border:none; padding:5px; margin-bottom:8px; border-radius:4px;">
-            <option value="auto" selected>1 - Tự động sinh (Mặc định)</option>
+        <label>Chế độ kiểm tra:</label>
+        <select id="ui-mode">
+            <option value="auto" selected>1 - Tự động sinh (Khuyên dùng)</option>
             <option value="user">2 - Dùng danh sách / File TXT</option>
         </select>
 
         <div id="ui-user-block" style="display:none;">
-            <label style="color: #f1c40f; font-weight:bold;">Tải file .txt lên:</label>
-            <input type="file" id="ui-file-upload" accept=".txt" style="width: 100%; margin-bottom: 5px; color: white;">
+            <label style="color: #fbd38d;">Tải file .txt lên:</label>
+            <input type="file" id="ui-file-upload" accept=".txt">
 
-            <label>Hoặc nhập danh sách (Mỗi dòng 1 tên):</label>
-            <textarea id="ui-usernames" style="width: 100%; height: 60px; background: #2c3e50; color: white; border: none; padding: 5px; margin-bottom: 10px; border-radius: 4px;" placeholder="ten_so_1\nten_so_2"></textarea>
+            <label>Hoặc dán danh sách (Mỗi dòng 1 tên):</label>
+            <textarea id="ui-usernames" placeholder="ten_so_1\nten_so_2"></textarea>
         </div>
 
         <div id="ui-auto-block">
-            <label>Kiểu sinh:</label>
-            <select id="ui-gen-type" style="width:100%; background:#2c3e50; color:white; border:none; padding:5px; margin-bottom:8px; border-radius:4px;">
-                <option value="random" selected>Random (Ngẫu nhiên - Khuyên dùng)</option>
-                <option value="sequence">Sequence (Theo thứ tự từ điển)</option>
+            <label>Thuật toán sinh tên:</label>
+            <select id="ui-gen-type">
+                <option value="random" selected>Random (Ngẫu nhiên - Nên dùng)</option>
+                <option value="sequence">Sequence (Tuần tự từ điển)</option>
             </select>
 
-            <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <div style="display:flex; gap:12px;">
                 <div style="flex:1;">
-                    <label>Độ dài tối thiểu:</label>
-                    <input id="ui-min-len" type="number" value="4" min="1" style="width:100%; background:#2c3e50; color:white; border:none; padding:5px; border-radius:4px;">
+                    <label>Độ dài Min:</label>
+                    <input id="ui-min-len" type="number" value="4" min="1">
                 </div>
                 <div style="flex:1;">
-                    <label>Độ dài tối đa:</label>
-                    <input id="ui-max-len" type="number" value="6" min="1" style="width:100%; background:#2c3e50; color:white; border:none; padding:5px; border-radius:4px;">
+                    <label>Độ dài Max:</label>
+                    <input id="ui-max-len" type="number" value="6" min="1">
                 </div>
             </div>
 
-            <label>Số lượng sinh (0 = Chạy vô hạn):</label>
-            <input id="ui-count" type="number" value="0" min="0" style="width:100%; background:#2c3e50; color:white; border:none; padding:5px; margin-bottom:8px; border-radius:4px;">
+            <label>Số lượng giới hạn (0 = Chạy vô hạn):</label>
+            <input id="ui-count" type="number" value="0" min="0">
         </div>
 
+        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0 15px 0;"></div>
+
         <label>Telegram Bot Token (Tùy chọn):</label>
-        <input type="text" id="ui-tele-token" style="width: 100%; background: #2c3e50; color: white; border: none; padding: 5px; margin-bottom: 5px; border-radius: 4px;">
+        <input type="text" id="ui-tele-token" placeholder="123456789:AAH_xxx...">
 
         <label>Telegram Chat ID:</label>
-        <input type="text" id="ui-tele-chatid" style="width: 100%; background: #2c3e50; color: white; border: none; padding: 5px; margin-bottom: 10px; border-radius: 4px;">
+        <input type="text" id="ui-tele-chatid" placeholder="ID của bạn hoặc Group">
 
-        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-            <input id="ui-send-file-tele" type="checkbox" style="margin-right:6px;" />
-            <label for="ui-send-file-tele">Gửi file kết quả lên Tele khi dừng</label>
+        <div class="cyber-checkbox-wrapper">
+            <input id="ui-send-file-tele" type="checkbox" />
+            <label for="ui-send-file-tele">Gửi file báo cáo lên Telegram khi dừng</label>
+        </div>
+
+        <div class="cyber-checkbox-wrapper" style="margin-bottom: 15px;">
+            <input id="ui-auto-save" type="checkbox" checked />
+            <label for="ui-auto-save" style="color: #6ee7b7;">Tự động tải File (.txt) về máy khi xong</label>
         </div>
 
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <button id="ui-btn-start" style="flex: 1; background: #2ecc71; border: none; color: white; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold;">▶ Bắt đầu</button>
-            <button id="ui-btn-stop" style="flex: 1; background: #e74c3c; border: none; color: white; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold;" disabled>⏹ Dừng & Lưu file</button>
+            <button id="ui-btn-start" class="cyber-btn">▶ Bắt đầu</button>
+            <button id="ui-btn-stop" class="cyber-btn" disabled>⏹ Dừng lại</button>
         </div>
 
-        <div id="ui-status" style="background: #000; padding: 8px; border-radius: 4px; color: #f1c40f; text-align: center; font-weight: bold;">Trạng thái: Sẵn sàng</div>
+        <div id="ui-status">Trạng thái: Sẵn sàng</div>
     `;
 
     document.body.appendChild(ui);
 
-    // 3. BIẾN TOÀN CỤC & TRẠNG THÁI
+    // 4. BIẾN TOÀN CỤC & TRẠNG THÁI
     let isRunning = false;
     let successList = [];
     let failList = [];
@@ -98,12 +165,12 @@
         const reader = new FileReader();
         reader.onload = function(event) {
             document.getElementById('ui-usernames').value = event.target.result;
-            document.getElementById('ui-status').innerHTML = `<span style='color:#2ecc71;'>Đã tải file: ${file.name}</span>`;
+            document.getElementById('ui-status').innerHTML = `<span style='color:#34d399;'>Đã tải: ${file.name}</span>`;
         };
         reader.readAsText(file);
     });
 
-    // Hàm gửi tin nhắn Telegram (Dùng GM_xmlhttpRequest bypass CSP)
+    // Hàm gửi tin nhắn Telegram
     function sendTelegramMessage(token, chatId, message) {
         return new Promise((resolve, reject) => {
             if (!token || !chatId) return resolve();
@@ -121,7 +188,7 @@
         });
     }
 
-    // Gửi file (document) lên Telegram (Dùng GM_xmlhttpRequest)
+    // Gửi file (document) lên Telegram
     function sendTelegramFile(token, chatId, blob, filename) {
         return new Promise((resolve, reject) => {
             if (!token || !chatId) return resolve();
@@ -170,7 +237,7 @@
         }
     }
 
-    async function downloadResults() {
+    async function processResults() {
         let content = "=== DANH SÁCH TÊN ĐẶT ĐƯỢC (THÀNH CÔNG) ===\n";
         content += successList.length > 0 ? successList.join("\n") : "(Không có tên nào)";
 
@@ -184,25 +251,31 @@
             content += uncheckedList.length > 0 ? uncheckedList.join("\n") : "(Đã kiểm tra hết toàn bộ)";
         }
 
+        // Tạo File Blob
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-
         const now = new Date();
         const timeStr = `${now.getHours()}h${now.getMinutes()}p_${now.getDate()}-${now.getMonth()+1}`;
-        a.download = `KetQua_Username_${timeStr}.txt`;
+        const fileName = `KetQua_Username_${timeStr}.txt`;
 
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Tính năng mới: Kiểm tra xem user có bật tự động tải file không
+        const isAutoSave = document.getElementById('ui-auto-save').checked;
+        if (isAutoSave) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
 
+        // Gửi Telegram (nếu có chọn)
         try {
             const sendFile = document.getElementById('ui-send-file-tele') && document.getElementById('ui-send-file-tele').checked;
             const token = document.getElementById('ui-tele-token').value.trim();
             const chatId = document.getElementById('ui-tele-chatid').value.trim();
             if (sendFile && token && chatId) {
                 const blobCopy = blob.slice(0, blob.size, blob.type);
-                await sendTelegramFile(token, chatId, blobCopy, a.download);
+                await sendTelegramFile(token, chatId, blobCopy, fileName);
             }
         } catch (e) {
             console.error('Không thể gửi file tự động qua GM_xmlhttpRequest:', e);
@@ -216,7 +289,7 @@
         const statusDiv = document.getElementById('ui-status');
 
         if (!usernameInput) {
-            statusDiv.innerHTML = "<span style='color:red;'>LỖI: Chưa mở bảng nhập Username!</span>";
+            statusDiv.innerHTML = "<span style='color:#ef4444;'>LỖI: Chưa mở bảng nhập Username!</span>";
             return;
         }
 
@@ -242,7 +315,7 @@
         if (mode === 'user') {
             rawUsernames = document.getElementById('ui-usernames').value.split('\n').map(n => n.trim()).filter(n => n !== '');
             if (rawUsernames.length === 0) {
-                statusDiv.innerHTML = "<span style='color:red;'>Chưa nhập danh sách!</span>";
+                statusDiv.innerHTML = "<span style='color:#ef4444;'>Lỗi: Chưa nhập danh sách!</span>";
                 isRunning = false;
                 document.getElementById('ui-btn-start').disabled = false;
                 document.getElementById('ui-btn-stop').disabled = true;
@@ -252,7 +325,7 @@
             for (; currentIndex < rawUsernames.length; currentIndex++) {
                 if (!isRunning) break;
                 const currentName = rawUsernames[currentIndex];
-                statusDiv.innerHTML = `Đang check: <b>${currentName}</b> (${currentIndex + 1}/${rawUsernames.length})`;
+                statusDiv.innerHTML = `Đang check:<br><span style="color:#00d2ff; font-size:15px;">${currentName}</span><br>(${currentIndex + 1}/${rawUsernames.length})`;
 
                 setReactInputValue(usernameInput, currentName);
 
@@ -313,7 +386,7 @@
                 seen.add(currentName);
 
                 generated++;
-                statusDiv.innerHTML = `Đang check: <b>${currentName}</b> (${generated}/${totalCount || '∞'})`;
+                statusDiv.innerHTML = `Đang check:<br><span style="color:#00d2ff; font-size:15px;">${currentName}</span><br>(${generated}/${totalCount || '∞'})`;
 
                 setReactInputValue(usernameInput, currentName);
 
@@ -348,12 +421,13 @@
 
         if (isRunning) {
             isRunning = false;
-            statusDiv.innerHTML = "<span style='color:#2ecc71;'>Đã quét xong! Đang xuất file...</span>";
-            await downloadResults();
+            statusDiv.innerHTML = "<span style='color:#34d399;'>Đã quét xong! Đang xuất dữ liệu...</span>";
+            await processResults();
         }
 
         document.getElementById('ui-btn-start').disabled = false;
         document.getElementById('ui-btn-stop').disabled = true;
+        statusDiv.innerHTML = "<span style='color:#34d399;'>Hoàn thành. Sẵn sàng!</span>";
     }
 
     document.getElementById('ui-btn-start').addEventListener('click', runChecker);
@@ -361,11 +435,12 @@
     document.getElementById('ui-btn-stop').addEventListener('click', async () => {
         if (isRunning) {
             isRunning = false;
-            document.getElementById('ui-status').innerHTML = "<span style='color:#e67e22;'>Đã dừng! Đang gửi/xuất báo cáo...</span>";
-            await downloadResults();
+            document.getElementById('ui-status').innerHTML = "<span style='color:#fbbf24;'>Đang dừng & Xử lý báo cáo...</span>";
+            await processResults();
 
             document.getElementById('ui-btn-start').disabled = false;
             document.getElementById('ui-btn-stop').disabled = true;
+            document.getElementById('ui-status').innerHTML = "<span style='color:#fbbf24;'>Đã dừng an toàn!</span>";
         }
     });
 
